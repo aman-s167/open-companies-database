@@ -2,7 +2,7 @@ version: '3.9'
 
 services:
   db:
-    image: postgres:16-alpine
+    image: postgres:14-alpine
     container_name: posgtresql-n8n
     volumes:
       - ~/postgres_data/open-companies-database:/var/lib/postgresql/data/
