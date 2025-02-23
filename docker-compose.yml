@@ -2,24 +2,26 @@ version: '3.9'
 
 services:
   db:
-    image: postgres:14
+    image: postgres:16-alpine
+    container_name: posgtresql-n8n
     volumes:
       - ~/postgres_data/open-companies-database:/var/lib/postgresql/data/
+      - ./init-metabase.sql:/docker-entrypoint-initdb.d/init-metabase.sql
     environment:
-      POSTGRES_DB: open_companies_db
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgres-n8n-queue
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: n8n_postgresql.16893
     ports:
-      - "35432:5432"
+      - "3000:5432"
 
   web:
     build: .
-    # If you prefer not to override the built image, remove the volume mount
+    command: bash -c "poetry install && poetry run python manage.py migrate && poetry run python companies/sample_data/load_sample_data.py && poetry run python manage.py runserver 0.0.0.0:8000"
+    # For production, you may remove the volume mount so that the built image isn’t overridden:
     # volumes:
     #   - .:/code
-    command: bash -c "poetry run python manage.py migrate && poetry run python companies/sample_data/load_sample_data.py && poetry run python manage.py runserver 0.0.0.0:8000"
     ports:
-      - "8002:8000"   # container listens on 8000, host port is 8002
+      - "8002:8000"
     depends_on:
       - db
     environment:
@@ -32,12 +34,12 @@ services:
       - "8003:3000"
     environment:
       MB_DB_TYPE: postgres
-      MB_DB_DBNAME: open_companies_db
+      MB_DB_DBNAME: metabase_db
       MB_DB_PORT: 5432
-      MB_DB_USER: user
-      MB_DB_PASS: password
+      MB_DB_USER: postgres
+      MB_DB_PASS: n8n_postgresql.16893
       MB_DB_HOST: db
-      MB_DB_CONNECTION_URI: "postgres://user:password@db:5432/open_companies_db"
+      MB_DB_CONNECTION_URI: "postgres://postgres:n8n_postgresql.16893@db:5432/metabase_db"
       MB_PASSWORD_COMPLEXITY: "strong"
       MB_PASSWORD_LENGTH: 12
     depends_on:
@@ -48,8 +50,7 @@ services:
 
   enrich_via_crustdata:
     build: .
-    command: bash -c "poetry run python -u fetch_crustdata.py --request_payload crustdata_request_payload.json > /proc/1/fd/1 2>/proc/1/fd/2"
-    # Remove volume mounting if not necessary for production deployments:
+    command: bash -c "poetry install && poetry run python -u fetch_crustdata.py --request_payload crustdata_request_payload.json > /proc/1/fd/1 2>/proc/1/fd/2"
     # volumes:
     #   - .:/code
     depends_on:
