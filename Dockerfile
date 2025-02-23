@@ -13,8 +13,7 @@ WORKDIR /code
 COPY pyproject.toml /code/
 COPY poetry.lock /code/
 RUN pip install poetry
-RUN poetry install --no-dev
+RUN poetry install --without dev
 
 # Copy project
 COPY . /code/
-
