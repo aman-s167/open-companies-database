@@ -10,7 +10,7 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
     ports:
-      - "35432:5432"
+      - "35432:5432"  # if you don't need external access to the DB, you can even remove this mapping
 
   web:
     build: .
@@ -18,17 +18,17 @@ services:
     volumes:
       - .:/code
     ports:
-      - "8000:8000"
+      - "8002:8000"   # changed from "8000:8000"
     depends_on:
       - db
     environment:
       - DJANGO_SETTINGS_MODULE=open_companies_database.settings_docker
-      - PYTHONPATH=/code  # important for adding the base directory to sys.path
+      - PYTHONPATH=/code
 
   metabase:
     image: metabase/metabase
     ports:
-      - "3000:3000"
+      - "8003:3000"   # changed from "3000:3000"
     environment:
       MB_DB_TYPE: postgres
       MB_DB_DBNAME: open_companies_db
@@ -47,7 +47,7 @@ services:
 
   enrich_via_crustdata:
     build: .
-    command: bash -c "poetry install & poetry run python -u fetch_crustdata.py --request_payload crustdata_request_payload.json > /proc/1/fd/1 2>/proc/1/fd/2"
+    command: bash -c "poetry install && poetry run python -u fetch_crustdata.py --request_payload crustdata_request_payload.json > /proc/1/fd/1 2>/proc/1/fd/2"
     volumes:
       - .:/code
     depends_on:
