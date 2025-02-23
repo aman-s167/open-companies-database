@@ -12,16 +12,13 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: n8n_postgresql.16893
     ports:
-      - "3000:5432"
+      - "35432:5432"  # Changed from 3000:5432 to avoid conflict
 
   web:
     build: .
     command: bash -c "poetry install && poetry run python manage.py migrate && poetry run python companies/sample_data/load_sample_data.py && poetry run python manage.py runserver 0.0.0.0:8000"
-    # For production, you may remove the volume mount so that the built image isn’t overridden:
-    # volumes:
-    #   - .:/code
     ports:
-      - "8002:8000"
+      - "8002:8000"   # Container listens on 8000, host port is 8002
     depends_on:
       - db
     environment:
@@ -31,7 +28,7 @@ services:
   metabase:
     image: metabase/metabase
     ports:
-      - "8003:3000"
+      - "8003:3000"   # Metabase container listens on 3000, host port is 8003
     environment:
       MB_DB_TYPE: postgres
       MB_DB_DBNAME: metabase_db
@@ -51,8 +48,6 @@ services:
   enrich_via_crustdata:
     build: .
     command: bash -c "poetry install && poetry run python -u fetch_crustdata.py --request_payload crustdata_request_payload.json > /proc/1/fd/1 2>/proc/1/fd/2"
-    # volumes:
-    #   - .:/code
     depends_on:
       - db
     environment:
