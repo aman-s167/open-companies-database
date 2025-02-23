@@ -10,15 +10,16 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
     ports:
-      - "35432:5432"  # if you don't need external access to the DB, you can even remove this mapping
+      - "35432:5432"
 
   web:
     build: .
-    command: bash -c "poetry install && poetry run python manage.py migrate && poetry run python companies/sample_data/load_sample_data.py && poetry run python manage.py runserver 0.0.0.0:8000"
-    volumes:
-      - .:/code
+    # If you prefer not to override the built image, remove the volume mount
+    # volumes:
+    #   - .:/code
+    command: bash -c "poetry run python manage.py migrate && poetry run python companies/sample_data/load_sample_data.py && poetry run python manage.py runserver 0.0.0.0:8000"
     ports:
-      - "8002:8000"   # changed from "8000:8000"
+      - "8002:8000"   # container listens on 8000, host port is 8002
     depends_on:
       - db
     environment:
@@ -28,7 +29,7 @@ services:
   metabase:
     image: metabase/metabase
     ports:
-      - "8003:3000"   # changed from "3000:3000"
+      - "8003:3000"
     environment:
       MB_DB_TYPE: postgres
       MB_DB_DBNAME: open_companies_db
@@ -47,9 +48,10 @@ services:
 
   enrich_via_crustdata:
     build: .
-    command: bash -c "poetry install && poetry run python -u fetch_crustdata.py --request_payload crustdata_request_payload.json > /proc/1/fd/1 2>/proc/1/fd/2"
-    volumes:
-      - .:/code
+    command: bash -c "poetry run python -u fetch_crustdata.py --request_payload crustdata_request_payload.json > /proc/1/fd/1 2>/proc/1/fd/2"
+    # Remove volume mounting if not necessary for production deployments:
+    # volumes:
+    #   - .:/code
     depends_on:
       - db
     environment:
